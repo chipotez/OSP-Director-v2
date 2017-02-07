@@ -1,0 +1,94 @@
+
+
+
+
+mkdir	~/images				
+mkdir	~/templates				
+sudo	sed	-i	/localhost4.localdomain4/ s/$/ `hostname -f` `hostname -s`/	/etc/hosts	
+cat	/etc/hosts				
+sudo	systemctl	disable	firewalld		
+sudo	systemctl	stop	firewalld		
+
+sudo	yum	makecache	fast		
+sudo	yum	makecache	fast		
+sudo	yum	repolist			
+sudo	yum	update	-y
+sudo reboot			
+
+	
+cp	/usr/share/instack-undercloud/undercloud.conf.sample	~/undercloud.conf			
+vi	undercloud.conf				
+openstack	undercloud	install			
+
+cat	stackrc				
+cat	undercloud-passwords.conf				
+source	~/stackrc				
+
+
+ip	addr				
+ip	addr	|	grep	inet 	
+route	-n				
+ip	r	s			
+sudo	ovs-vsctl	show			
+cat	/etc/os-net-config/config.json	|	python	-m	json.tool
+
+
+neutron	net-list				
+neutron	subnet-list				
+neutron	subnet-show	08c5926c-fd7b-4bd9-a96e-db891cc04f6a			
+neutron	subnet-update	08c5926c-fd7b-4bd9-a96e-db891cc04f6a		--dns-nameserver	192.0.2.254
+neutron	subnet-show	08c5926c-fd7b-4bd9-a96e-db891cc04f6a			
+
+cd	~/images				
+sudo	yum	install	-y	rhosp-director-images	rhosp-director-images-ipa
+cp	/usr/share/rhosp-director-images/overcloud-full-latest-9.0.tar	~/images/.			
+cp	/usr/share/rhosp-director-images/ironic-python-agent-latest-9.0.tar	~/images/.			
+for	tarfile	in	*.tar;	do	tar
+
+sudo	yum	install	-y	libguestfs-tool*	
+sudo	yum	install	libvirt		
+export	LIBGUESTFS_BACKEND=direct				
+virt-customize	-a	overcloud-full.qcow2	--run-command	"systemctl disable chronyd"
+virt-customize	-a	overcloud-full.qcow2	--run-command	"timedatectl	set-timezone	America/Mexico_City"
+
+
+
+source	~/stackrc				
+openstack	overcloud	image	upload	--image-path	/home/stack/images/
+			
+ironic node-list				
+ironic node-update ctrl03  add properties/capabilities='profile:control,boot_option:local'					
+ironic node-update ctrl02  add properties/capabilities='profile:control,boot_option:local'					
+ironic node-update ctrl01  add properties/capabilities='profile:control,boot_option:local'					
+
+ironic node-update compute01 add properties/capabilities='profile:compute,boot_option:local'					
+ironic node-update compute02 add properties/capabilities='profile:compute,boot_option:local'					
+
+ironic node-update ceph01 add properties/capabilities='profile:ceph-storage,boot_option:local'					
+ironic node-update ceph02 add properties/capabilities='profile:ceph-storage,boot_option:local'					
+ironic node-update ceph03 add properties/capabilities='profile:ceph-storage,boot_option:local'					
+ironic node-update ceph04 add properties/capabilities='profile:ceph-storage,boot_option:local'					
+
+ironic node-update ceph04 replace properties/local_gb='40'					
+ironic node-update ceph03 replace properties/local_gb='40'					
+ironic node-update ceph02 replace properties/local_gb='40'					
+ironic node-update ceph01 replace properties/local_gb='40'					
+
+openstack overcloud profiles list					
+
+ironic node-update ctrl01 add properties/root_device='{"serial": "QM00001"}'					
+ironic node-update ctrl02 add properties/root_device='{"serial": "QM00001"}'					
+ironic node-update ctrl03 add properties/root_device='{"serial": "QM00001"}'					
+
+
+ironic node-update compute01 add properties/root_device='{"serial": "QM00001"}'					
+ironic node-update compute02 add properties/root_device='{"serial": "QM00001"}'					
+
+ironic node-update ceph01 add properties/root_device='{"serial": "QM00001"}'					
+ironic node-update ceph02 add properties/root_device='{"serial": "QM00001"}'					
+ironic node-update ceph03 add properties/root_device='{"serial": "QM00001"}'					
+ironic node-update ceph04 add properties/root_device='{"serial": "QM00001"}'					
+
+
+heat	stack-list	--show-nested	|	grep	-v COM
+heat	stack-list	--show-nested	|	grep	-v				
