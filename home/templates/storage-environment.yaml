@@ -1,0 +1,56 @@
+storage-environment.yaml 
+## A Heat environment file which can be used to set up storage
+## backends. Defaults to Ceph used as a backend for Cinder, Glance and
+## Nova ephemeral storage.
+resource_registry:
+  OS::TripleO::NodeUserData: /home/stack/templates/firstboot/wipe-disks.yaml
+parameter_defaults:
+
+  #### BACKEND SELECTION ####
+
+  CinderEnableIscsiBackend: false
+  CinderEnableRbdBackend: true
+  NovaEnableRbdBackend: true
+  GlanceBackend: rbd
+  GnocchiBackend: rbd
+
+
+  #### CEPH SETTINGS ####
+
+  ## Whether to deploy Ceph OSDs on the controller nodes. By default
+  ## OSDs are deployed on dedicated ceph-storage nodes only.
+  # ControllerEnableCephStorage: false
+
+  ## When deploying Ceph Nodes through the oscplugin CLI, the following
+  ## parameters are set automatically by the CLI. When deploying via
+  ## heat stack-create or ceph on the controller nodes only,
+  ## they need to be provided manually.
+
+  ## Number of Ceph storage nodes to deploy
+  #CephStorageCount: 3
+  ## Ceph FSID, e.g. '4b5c8c0a-ff60-454b-a1b4-9747aa737d19'
+  #CephClusterFSID: ''
+  ## Ceph monitor key, e.g. 'AQC+Ox1VmEr3BxAALZejqeHj50Nj6wJDvs96OQ=='
+  #CephMonKey: ''
+  ## Ceph admin key, e.g. 'AQDLOh1VgEp6FRAAFzT7Zw+Y9V6JJExQAsRnRQ=='
+  #CephAdminKey: ''
+
+  ExtraConfig:
+    ceph::profile::params::osd_journal_size: 1024
+    ceph::profile::params::osd_pool_default_pg_num: 32
+    ceph::profile::params::osd_pool_default_pgp_num: 32
+    ceph::profile::params::osd_pool_default_size: 3
+    ceph::profile::params::osd_pool_default_min_size: 1
+    ceph::profile::params::osds:
+        '/dev/sdb': {}
+        '/dev/sdc': {}
+
+    ceph::profile::params::manage_repo: false
+    ceph::profile::params::authentication_type: cephx
+
+    ceph_pools:
+    - "%{hiera('cinder_rbd_pool_name')}"
+    - "%{hiera('nova::compute::rbd::libvirt_images_rbd_pool')}"
+    - "%{hiera('glance::backend::rbd::rbd_store_pool')}"
+
+    ceph_osd_selinux_permissive: true
